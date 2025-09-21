@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image to PDF Converter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      text-align: center;
+      padding: 40px;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      display: inline-block;
+    }
+    h2 { color: #333; }
+    input {
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      background: #007BFF;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #preview {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    #preview img {
+      max-width: 150px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      padding: 5px;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🖼️ Image to PDF Converter</h2>
+    <p>Select one or more images and click the button below:</p>
+    <input type="file" id="imageInput" accept="image/*" multiple>
+    <br>
+    <button onclick="convertToPDF()">Convert to PDF</button>
+    <div id="preview"></div>
+  </div>
+
+  <script>
+    // Show previews
+    document.getElementById("imageInput").addEventListener("change", function() {
+      let preview = document.getElementById("preview");
+      preview.innerHTML = "";
+      for (let file of this.files) {
+        let img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+      }
+    });
+
+    async function convertToPDF() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      let input = document.getElementById("imageInput");
+      if (input.files.length === 0) {
+        alert("⚠️ Please select at least one image!");
+        return;
+      }
+
+      for (let i = 0; i < input.files.length; i++) {
+        let file = input.files[i];
+        let reader = new FileReader();
+
+        reader.onload = function(e) {
+          let img = new Image();
+          img.src = e.target.result;
+          img.onload = function() {
+            let pageWidth = pdf.internal.pageSize.getWidth();
+            let pageHeight = pdf.internal.pageSize.getHeight();
+            let ratio = Math.min(pageWidth / img.width, pageHeight / img.height);
+            let width = img.width * ratio;
+            let height = img.height * ratio;
+            let x = (pageWidth - width) / 2;
+            let y = (pageHeight - height) / 2;
+
+            pdf.addImage(img, 'JPEG', x, y, width, height);
+
+            if (i < input.files.length - 1) {
+              pdf.addPage();
+            } else {
+              pdf.save("converted.pdf");
+            }
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  </script>
+</body>
+</html>
